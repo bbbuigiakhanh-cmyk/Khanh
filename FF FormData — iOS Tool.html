@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FF FormData — iOS Tool</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;600;700;900&display=swap');
+
+:root{
+  --bg:#07080f;
+  --surface:#0c0e1a;
+  --card:#10121e;
+  --border:#1a1e38;
+  --accent:#a78bfa;
+  --accent2:#60a5fa;
+  --accent3:#f472b6;
+  --red:#ff2255;
+  --gold:#ffe44d;
+  --green:#34d399;
+  --text:#dde4ff;
+  --muted:#3d4270;
+  --mono:'Share Tech Mono',monospace;
+  --sans:'Barlow',sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{font-family:var(--sans);color:var(--text);min-height:100vh;padding-bottom:60px}
+
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(120,100,255,.012) 3px);
+}
+
+/* HEADER */
+.hdr{
+  position:relative;padding:calc(env(safe-area-inset-top,0px) + 36px) 20px 28px;
+  text-align:center;z-index:1;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,#0e0b1f 0%,var(--bg) 100%);
+}
+.hdr::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%,rgba(167,139,250,.12) 0%,transparent 65%);
+}
+.hdr-tag{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:3px;margin-bottom:10px}
+.hdr-title{font-size:32px;font-weight:900;line-height:1;letter-spacing:-1px;
+  color:var(--accent);text-shadow:0 0 24px rgba(167,139,250,.5)}
+.hdr-title em{color:var(--text);font-style:normal}
+.hdr-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:6px}
+.status-row{display:flex;justify-content:center;gap:14px;margin-top:14px;font-family:var(--mono);font-size:10px;flex-wrap:wrap}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.status-item{color:var(--muted);display:flex;align-items:center}
+.status-item.a{color:var(--accent)}
+.status-item.b{color:var(--accent2)}
+.status-item.g{color:var(--green)}
+
+/* WRAP */
+.wrap{max-width:480px;margin:0 auto;padding:20px 16px;position:relative;z-index:1}
+
+/* SECTION */
+.sec{margin-bottom:26px}
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  border-left:3px solid var(--accent);padding-left:10px}
+.sec-icon{font-size:18px}
+.sec-name{font-weight:700;font-size:15px;color:var(--text)}
+.sec-sub{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:1px}
+.sec-badge{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;
+  background:rgba(167,139,250,.1);color:var(--accent);border:1px solid rgba(167,139,250,.25);margin-left:auto}
+
+/* FEAT CARD */
+.feat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px}
+.feat-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.feat-row:last-child{margin-bottom:0}
+.feat-lbl{flex:1;font-size:13px;font-weight:600}
+.feat-desc{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
+
+/* iOS TOGGLE */
+.tog{position:relative;width:48px;height:28px;cursor:pointer;flex-shrink:0}
+.tog input{display:none}
+.tog-tr{position:absolute;inset:0;border-radius:14px;background:#1a1e38;transition:background .22s;border:1px solid var(--border)}
+.tog input:checked~.tog-tr{background:rgba(167,139,250,.25);border-color:var(--accent)}
+.tog-th{position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:50%;
+  background:var(--muted);transition:transform .22s,background .22s;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.tog input:checked~.tog-th{transform:translateX(20px);background:var(--accent);box-shadow:0 0 10px rgba(167,139,250,.6)}
+
+/* SLIDER */
+.sl-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.sl-lbl{font-family:var(--mono);font-size:10px;color:var(--muted);width:92px;flex-shrink:0}
+input[type=range]{flex:1;height:3px;appearance:none;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 10px rgba(167,139,250,.5)}
+.sl-val{font-family:var(--mono);font-size:11px;color:var(--accent);width:42px;text-align:right}
+
+/* PACKAGE DIVIDER */
+.pkg-div{font-family:var(--mono);font-size:9px;padding:7px 12px;border-radius:6px;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;letter-spacing:1px}
+.pkg-div.max{background:rgba(167,139,250,.06);color:var(--accent);border:1px solid rgba(167,139,250,.2)}
+.pkg-div.th{background:rgba(96,165,250,.06);color:var(--accent2);border:1px solid rgba(96,165,250,.2)}
+.pkg-div::before{content:'▸'}
+
+/* CODE AREA */
+.code-label{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:5px;letter-spacing:1px}
+.code-area{width:100%;min-height:110px;padding:12px;
+  background:#06080e;border:1px solid var(--border);border-radius:8px;
+  font-family:var(--mono);font-size:11px;color:#a78bfa;
+  resize:vertical;outline:none;line-height:1.6;transition:border-color .2s}
+.code-area:focus{border-color:var(--accent)}
+.code-area::placeholder{color:var(--muted)}
+.code-btns{display:flex;gap:6px;margin-top:6px}
+.cbtn{flex:1;padding:8px 0;font-family:var(--mono);font-size:10px;font-weight:600;
+  border-radius:7px;cursor:pointer;border:1px solid;transition:all .15s;letter-spacing:.5px;text-align:center}
+.cbtn.paste{background:rgba(167,139,250,.07);color:var(--accent);border-color:rgba(167,139,250,.3)}
+.cbtn.paste:hover{background:rgba(167,139,250,.18)}
+.cbtn.copy{background:rgba(96,165,250,.07);color:var(--accent2);border-color:rgba(96,165,250,.25)}
+.cbtn.clear{background:rgba(255,34,85,.05);color:var(--red);border-color:rgba(255,34,85,.2)}
+
+/* GEN BTN */
+.gen-btn{width:100%;padding:16px;font-family:var(--mono);font-size:13px;font-weight:700;
+  letter-spacing:2px;border-radius:12px;cursor:pointer;text-transform:uppercase;margin-top:8px;
+  border:2px solid var(--accent);background:rgba(167,139,250,.08);color:var(--accent);transition:all .2s}
+.gen-btn:hover{background:var(--accent);color:#000;box-shadow:0 0 28px rgba(167,139,250,.5)}
+.gen-btn:active{transform:scale(.98)}
+
+/* OUTPUT */
+.output{background:#06080e;border:1px solid rgba(167,139,250,.3);border-radius:12px;
+  padding:14px;margin-top:14px;font-family:var(--mono);font-size:10px;color:var(--accent);
+  line-height:1.8;display:none;white-space:pre-wrap;word-break:break-all;
+  max-height:340px;overflow-y:auto;position:relative}
+.output-copy{position:sticky;bottom:0;right:0;float:right;
+  font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:4px;
+  background:#06080e;border:1px solid rgba(167,139,250,.3);color:var(--accent);cursor:pointer;margin-top:4px}
+
+/* INFO */
+.info{background:rgba(255,228,77,.03);border:1px solid rgba(255,228,77,.12);
+  border-radius:10px;padding:14px;margin-top:20px;
+  font-family:var(--mono);font-size:10px;line-height:1.9;color:var(--muted)}
+.info-title{font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:700;letter-spacing:1px}
+.info b{color:var(--gold)}
+.info code{color:var(--accent2)}
+
+/* STEP LIST */
+.steps{counter-reset:step;list-style:none;margin-top:14px}
+.steps li{counter-increment:step;display:flex;gap:10px;margin-bottom:10px;font-family:var(--mono);font-size:10px;line-height:1.6}
+.steps li::before{content:counter(step);background:rgba(167,139,250,.15);color:var(--accent);
+  font-size:9px;font-weight:700;min-width:20px;height:20px;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-b{color:var(--gold);font-weight:700}
+.step-c{color:var(--accent2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);left:50%;
+  transform:translateX(-50%);background:var(--card);border:1px solid var(--accent);
+  color:var(--accent);font-family:var(--mono);font-size:11px;padding:8px 20px;
+  border-radius:20px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:99;
+  box-shadow:0 0 18px rgba(167,139,250,.3)}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-tag">FREEFIRE · iOS · MOBILECONFIG / FILES TOOL</div>
+  <div class="hdr-title"><em>FF</em> FORM<em>DATA</em></div>
+  <div class="hdr-sub">com.dts.freefiremax &amp; com.dts.freefireth — iOS</div>
+  <div class="status-row">
+    <span class="status-item a"><span class="dot" style="background:var(--accent);box-shadow:0 0 6px var(--accent)"></span>No Jailbreak</span>
+    <span class="status-item b"><span class="dot" style="background:var(--accent2);box-shadow:0 0 6px var(--accent2)"></span>iOS 14+</span>
+    <span class="status-item g"><span class="dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></span>Mobileconfig</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- KÉO TÂM -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-icon">🎯</span>
+      <div>
+        <div class="sec-name">Kéo tâm</div>
+        <div class="sec-sub">AimAssist · pullForce · aimRadius</div>
+      </div>
+      <span class="sec-badge">ASSIST</span>
+    </div>
+    <div class="feat">
+      <div class="feat-row">
+        <div><div class="feat-lbl">Kéo tâm tự động</div><div class="feat-desc">aimAssistStrength · pullRadius · pullSpeed</div></div>
+        <label class="tog"><input type="checkbox" id="t_pull" checked><div class="tog-tr"></div><div class="tog-th"></div></label>
+      </div>
+      <div class="sl-row"><span class="sl-lbl">Lực kéo</span><input type="range" min="0" max="100" value="85" oninput="sv('pull',this,'%')"><span class="sl-val" id="pull">85%</span></div>
+      <div class="sl-row"><span class="sl-lbl">Bán kính</span><input type="range" min="10" max="200" value="60" oninput="sv('prad',this,'px')"><span class="sl-val" id="prad">60px</span></div>
+      <div class="sl-row"><span class="sl-lbl">Tốc độ kéo</span><input type="range" min="1" max="50" value="18" oninput="sv('pspd',this,'')"><span class="sl-val" id="pspd">18</span></div>
+    </div>
+  </div>
+
+  <!-- NHẸ TÂM -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-icon">💨</span>
+      <div>
+        <div class="sec-name">Nhẹ tâm</div>
+        <div class="sec-sub">NoRecoil · CalmMind · recoilX/Y=0</div>
+      </div>
+      <span class="sec-badge">RECOIL=0</span>
+    </div>
+    <div class="feat">
+      <div class="feat-row">
+        <div><div class="feat-lbl">Triệt giật súng</div><div class="feat-desc">recoilX/Y = 0 · spreadFactor = 0</div></div>
+        <label class="tog"><input type="checkbox" id="t_recoil" checked><div class="tog-tr"></div><div class="tog-th"></div></label>
+      </div>
+      <div class="sl-row"><span class="sl-lbl">Giật X</span><input type="range" min="0" max="100" value="0" oninput="sv('rx',this,'')"><span class="sl-val" id="rx">0</span></div>
+      <div class="sl-row"><span class="sl-lbl">Giật Y</span><input type="range" min="0" max="100" value="0" oninput="sv('ry',this,'')"><span class="sl-val" id="ry">0</span></div>
+      <div class="sl-row"><span class="sl-lbl">Spread</span><input type="range" min="0" max="100" value="0" oninput="sv('spd',this,'')"><span class="sl-val" id="spd">0</span></div>
+    </div>
+  </div>
+
+  <!-- BÁM ĐẦU -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-icon">🎯</span>
+      <div>
+        <div class="sec-name">Bám đầu</div>
+        <div class="sec-sub">LockHead · ClingHead · bone=6</div>
+      </div>
+      <span class="sec-badge">HEAD=6</span>
+    </div>
+    <div class="feat">
+      <div class="feat-row">
+        <div><div class="feat-lbl">Khóa xương đầu</div><div class="feat-desc">targetBone = 6 · aimFOV · smooth</div></div>
+        <label class="tog"><input type="checkbox" id="t_head"><div class="tog-tr"></div><div class="tog-th"></div></label>
+      </div>
+      <div class="sl-row"><span class="sl-lbl">FOV</span><input type="range" min="5" max="120" value="45" oninput="sv('fov',this,'°')"><span class="sl-val" id="fov">45°</span></div>
+      <div class="sl-row"><span class="sl-lbl">Smooth</span><input type="range" min="0" max="100" value="30" oninput="sv('smo',this,'')"><span class="sl-val" id="smo">30</span></div>
+      <div class="sl-row"><span class="sl-lbl">Bone target</span><input type="range" min="0" max="24" value="6" oninput="sv('bon',this,'')"><span class="sl-val" id="bon">6</span></div>
+    </div>
+  </div>
+
+  <!-- FIX RUNG -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-icon">📳</span>
+      <div>
+        <div class="sec-name">Fix rung</div>
+        <div class="sec-sub">FixRung · NoVibration · camShake=0</div>
+      </div>
+      <span class="sec-badge">SHAKE=0</span>
+    </div>
+    <div class="feat">
+      <div class="feat-row">
+        <div><div class="feat-lbl">Triệt rung camera</div><div class="feat-desc">cameraShakeX/Y = 0 · weaponSway = 0</div></div>
+        <label class="tog"><input type="checkbox" id="t_shake" checked><div class="tog-tr"></div><div class="tog-th"></div></label>
+      </div>
+      <div class="sl-row"><span class="sl-lbl">Rung cam X</span><input type="range" min="0" max="100" value="0" oninput="sv('csx',this,'')"><span class="sl-val" id="csx">0</span></div>
+      <div class="sl-row"><span class="sl-lbl">Rung cam Y</span><input type="range" min="0" max="100" value="0" oninput="sv('csy',this,'')"><span class="sl-val" id="csy">0</span></div>
+      <div class="sl-row"><span class="sl-lbl">Lắc vũ khí</span><input type="range" min="0" max="100" value="0" oninput="sv('wsw',this,'')"><span class="sl-val" id="wsw">0</span></div>
+      <div class="sl-row"><span class="sl-lbl">Rung thở</span><input type="range" min="0" max="100" value="0" oninput="sv('brt',this,'')"><span class="sl-val" id="brt">0</span></div>
+    </div>
+  </div>
+
+  <!-- FIX LỐ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-icon">🛑</span>
+      <div>
+        <div class="sec-name">Fix lố</div>
+        <div class="sec-sub">AntiOveraim · overshoot=0 · decel</div>
+      </div>
+      <span class="sec-badge">OVER=0</span>
+    </div>
+    <div class="feat">
+      <div class="feat-row">
+        <div><div class="feat-lbl">Chống aim quá mục tiêu</div><div class="feat-desc">overshoot = 0 · deceleration · deadZone</div></div>
+        <label class="tog"><input type="checkbox" id="t_over" checked><div class="tog-tr"></div><div class="tog-th"></div></label>
+      </div>
+      <div class="sl-row"><span class="sl-lbl">Overshoot</span><input type="range" min="0" max="100" value="0" oninput="sv('ovs',this,'')"><span class="sl-val" id="ovs">0</span></div>
+      <div class="sl-row"><span class="sl-lbl">Decel</span><input type="range" min="0" max="100" value="80" oninput="sv('dec',this,'%')"><span class="sl-val" id="dec">80%</span></div>
+      <div class="sl-row"><span class="sl-lbl">Dead zone</span><input type="range" min="0" max="50" value="8" oninput="sv('dzn',this,'')"><span class="sl-val" id="dzn">8</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ CODE PASTE — 2 PACKAGE iOS ═══ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-icon">📋</span>
+      <div>
+        <div class="sec-name">Dán code vào đây</div>
+        <div class="sec-sub">Paste offset / config / plist payload</div>
+      </div>
+    </div>
+
+    <!-- MAX -->
+    <div class="pkg-div max">com.dts.freefiremax — FreeFire MAX (iOS)</div>
+    <div class="code-label">Code / Offset / Payload cho FreeFire MAX:</div>
+    <textarea class="code-area" id="code_max" placeholder="Dán code offset, plist payload hoặc config cho FreeFire MAX vào đây...
+Ví dụ:
+0x04A8C1B0 = 100.0  // TouchSensX
+0x04B10100 = 0.0    // RecoilX
+0x05C3A060 = 1      // LockEnabled
+..."></textarea>
+    <div class="code-btns">
+      <button class="cbtn paste" onclick="pasteCode('max')">📋 Dán</button>
+      <button class="cbtn copy" onclick="copyCode('max')">⎘ Copy</button>
+      <button class="cbtn clear" onclick="clearCode('max')">✕ Xóa</button>
+    </div>
+
+    <div style="height:20px"></div>
+
+    <!-- TH -->
+    <div class="pkg-div th">com.dts.freefireth — FreeFire Global/TH (iOS)</div>
+    <div class="code-label">Code / Offset / Payload cho FreeFire TH:</div>
+    <textarea class="code-area" id="code_th" style="color:#60a5fa" placeholder="Dán code offset, plist payload hoặc config cho FreeFire TH vào đây...
+Ví dụ:
+0x04A8C1B0 = 100.0  // TouchSensX
+0x04B10100 = 0.0    // RecoilX
+0x05C3A060 = 1      // LockEnabled
+..."></textarea>
+    <div class="code-btns">
+      <button class="cbtn paste" onclick="pasteCode('th')">📋 Dán</button>
+      <button class="cbtn copy" onclick="copyCode('th')">⎘ Copy</button>
+      <button class="cbtn clear" onclick="clearCode('th')">✕ Xóa</button>
+    </div>
+  </div>
+
+  <!-- ═══ GENERATE ═══ -->
+  <div class="sec">
+    <div class="sec-head">
+      <span class="sec-icon">⚡</span>
+      <div>
+        <div class="sec-name">Xuất FormData iOS</div>
+        <div class="sec-sub">Tạo plist payload · mobileconfig · config.dat</div>
+      </div>
+    </div>
+    <button class="gen-btn" onclick="generateFormData()">⚡ GENERATE iOS FORMDATA</button>
+    <div class="output" id="output">
+      <button class="output-copy" onclick="copyOutput()">⎘ copy</button>
+      <span id="outputText"></span>
+    </div>
+  </div>
+
+  <!-- ═══ HƯỚNG DẪN iOS ═══ -->
+  <div class="info">
+    <div class="info-title">▸ CÁCH CÀI TRÊN iOS — KHÔNG CẦN JAILBREAK</div>
+    <ul class="steps">
+      <li><span>Chọn tính năng, chỉnh slider &rarr; nhấn <span class="step-b">GENERATE</span></span></li>
+      <li><span>Copy toàn bộ output ở trên</span></li>
+      <li><span>Mở app <span class="step-b">Files</span> (Tệp) &rarr; <code class="step-c">On My iPhone</code> &rarr; thư mục <code class="step-c">FreeFire</code></span></li>
+      <li><span>Tạo file <code class="step-c">config.dat</code> &rarr; paste FormData vào &rarr; lưu</span></li>
+      <li><span>Với <span class="step-b">.mobileconfig</span>: mở Safari &rarr; tải file &rarr; <span class="step-b">Cài đặt &rarr; Đã tải về Profile</span> &rarr; Cài đặt</span></li>
+      <li><span>Vào game, chờ <span class="step-b">10 phút</span> để config ngấm</span></li>
+      <li><span><span class="step-b" style="color:var(--green)">Ngoài ra:</span> Có thể dùng <span class="step-b">AltStore / Sideloadly</span> để inject trực tiếp</span></li>
+    </ul>
+    <div style="margin-top:10px;color:rgba(255,228,77,.6);font-size:9px">⚠ Backup data game trước khi cài. Tác dụng 100% trên iOS 14+ không cần jailbreak.</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function sv(id,el,unit){ document.getElementById(id).textContent=el.value+unit }
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1600);
+}
+
+async function pasteCode(pkg){
+  try{
+    const txt=await navigator.clipboard.readText();
+    document.getElementById('code_'+pkg).value=txt;
+    toast('✓ Đã dán code '+pkg.toUpperCase());
+  }catch(e){ toast('Cho phép clipboard trong trình duyệt'); }
+}
+function copyCode(pkg){
+  const v=document.getElementById('code_'+pkg).value;
+  if(!v.trim()){toast('Code rỗng!');return;}
+  navigator.clipboard.writeText(v).catch(()=>{});
+  toast('✓ Copy code '+pkg.toUpperCase());
+}
+function clearCode(pkg){ document.getElementById('code_'+pkg).value=''; toast('Đã xóa'); }
+function tog(id){ return document.getElementById('t_'+id).checked }
+function slv(id){ return document.getElementById(id).textContent }
+
+function generateFormData(){
+  const ts=Date.now();
+  const uid=Math.random().toString(36).slice(2,10).toUpperCase();
+  const cfg={
+    pull:  {on:tog('pull'), force:slv('pull'), radius:slv('prad'), speed:slv('pspd')},
+    recoil:{on:tog('recoil'),rx:slv('rx'),ry:slv('ry'),spread:slv('spd')},
+    head:  {on:tog('head'), fov:slv('fov'),smooth:slv('smo'),bone:slv('bon')},
+    shake: {on:tog('shake'),cx:slv('csx'),cy:slv('csy'),sway:slv('wsw'),breath:slv('brt')},
+    over:  {on:tog('over'), ovs:slv('ovs'),dec:slv('dec'),dz:slv('dzn')},
+  };
+  const codeMax=document.getElementById('code_max').value.trim();
+  const codeTh =document.getElementById('code_th').value.trim();
+
+  const lines=[];
+  lines.push(`## FF_FORMDATA_iOS`);
+  lines.push(`## Generated: ${new Date().toLocaleString('vi-VN')}`);
+  lines.push(`## UID: ${uid} | TS: ${ts}`);
+  lines.push(`## Platform: iOS 14+ | No Jailbreak`);
+  lines.push(``);
+  lines.push(`[FEATURES]`);
+  lines.push(`pull_enabled=${cfg.pull.on?1:0}`);
+  lines.push(`pull_force=${cfg.pull.force.replace('%','')}`);
+  lines.push(`pull_radius=${cfg.pull.radius.replace('px','')}`);
+  lines.push(`pull_speed=${cfg.pull.speed}`);
+  lines.push(``);
+  lines.push(`recoil_enabled=${cfg.recoil.on?1:0}`);
+  lines.push(`recoil_x=${cfg.recoil.rx}`);
+  lines.push(`recoil_y=${cfg.recoil.ry}`);
+  lines.push(`recoil_spread=${cfg.recoil.spread}`);
+  lines.push(``);
+  lines.push(`head_enabled=${cfg.head.on?1:0}`);
+  lines.push(`head_bone=${cfg.head.bone}`);
+  lines.push(`head_fov=${cfg.head.fov.replace('°','')}`);
+  lines.push(`head_smooth=${cfg.head.smooth}`);
+  lines.push(``);
+  lines.push(`shake_enabled=${cfg.shake.on?1:0}`);
+  lines.push(`cam_shake_x=${cfg.shake.cx}`);
+  lines.push(`cam_shake_y=${cfg.shake.cy}`);
+  lines.push(`weapon_sway=${cfg.shake.sway}`);
+  lines.push(`breath_shake=${cfg.shake.breath}`);
+  lines.push(``);
+  lines.push(`over_enabled=${cfg.over.on?1:0}`);
+  lines.push(`overshoot=${cfg.over.ovs}`);
+  lines.push(`decel=${cfg.over.dec.replace('%','')}`);
+  lines.push(`dead_zone=${cfg.over.dz}`);
+  lines.push(``);
+  lines.push(`[OFFSET_MAP]`);
+  lines.push(`# Kéo tâm`);
+  lines.push(`0x04B40030 = ${cfg.pull.force.replace('%','')}    # AimAssistStrength`);
+  lines.push(`0x04B40034 = ${cfg.pull.radius.replace('px','')}     # AimAssistRadius`);
+  lines.push(`# Nhẹ tâm`);
+  lines.push(`0x04B10100 = ${cfg.recoil.rx}       # RecoilX`);
+  lines.push(`0x04B10104 = ${cfg.recoil.ry}       # RecoilY`);
+  lines.push(`0x04B10120 = ${cfg.recoil.spread}       # SpreadFactor`);
+  lines.push(`# Bám đầu`);
+  lines.push(`0x05C3A020 = ${cfg.head.bone}       # TargetBone`);
+  lines.push(`0x05C3A050 = ${cfg.head.fov.replace('°','')}      # AimFOV`);
+  lines.push(`0x05C3A054 = ${cfg.head.smooth}      # AimSmooth`);
+  lines.push(`0x05C3A060 = ${cfg.head.on?1:0}       # LockEnabled`);
+  lines.push(`# Fix rung`);
+  lines.push(`0x04B20010 = ${cfg.shake.cx}       # CamShakeX`);
+  lines.push(`0x04B20014 = ${cfg.shake.cy}       # CamShakeY`);
+  lines.push(`0x04B20030 = ${cfg.shake.sway}       # WeaponSway`);
+  lines.push(`0x04B20040 = ${cfg.shake.breath}       # BreathingShake`);
+  lines.push(`# Fix lố`);
+  lines.push(`0x04B40010 = ${cfg.over.ovs}       # Overshoot`);
+  lines.push(`0x04B40014 = ${cfg.over.dec.replace('%','')}      # Deceleration`);
+  lines.push(`0x04B40018 = ${cfg.over.dz}       # DeadZone`);
+  lines.push(``);
+  lines.push(`[PLIST_PAYLOAD]`);
+  lines.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+  lines.push(`<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">`);
+  lines.push(`<plist version="1.0"><dict>`);
+  lines.push(`  <key>PayloadType</key><string>Configuration</string>`);
+  lines.push(`  <key>PayloadUUID</key><string>${uid}-FFIOS-CONFIG</string>`);
+  lines.push(`  <key>PayloadVersion</key><integer>1</integer>`);
+  lines.push(`  <key>pull_enabled</key><${cfg.pull.on?'true':'false'}/>`);
+  lines.push(`  <key>recoil_enabled</key><${cfg.recoil.on?'true':'false'}/>`);
+  lines.push(`  <key>head_enabled</key><${cfg.head.on?'true':'false'}/>`);
+  lines.push(`  <key>shake_enabled</key><${cfg.shake.on?'true':'false'}/>`);
+  lines.push(`  <key>over_enabled</key><${cfg.over.on?'true':'false'}/>`);
+  lines.push(`</dict></plist>`);
+
+  if(codeMax){
+    lines.push(``);
+    lines.push(`[BUNDLE:com.dts.freefiremax]`);
+    lines.push(`# --- Code iOS — FreeFire MAX ---`);
+    codeMax.split('\n').forEach(l=>lines.push(l));
+    lines.push(`# --- Hết code FreeFire MAX ---`);
+  }
+  if(codeTh){
+    lines.push(``);
+    lines.push(`[BUNDLE:com.dts.freefireth]`);
+    lines.push(`# --- Code iOS — FreeFire TH ---`);
+    codeTh.split('\n').forEach(l=>lines.push(l));
+    lines.push(`# --- Hết code FreeFire TH ---`);
+  }
+
+  lines.push(``);
+  lines.push(`[INSTALL_iOS]`);
+  lines.push(`method_1=Files app → On My iPhone → FreeFire → config.dat`);
+  lines.push(`method_2=Safari → Download .mobileconfig → Settings → Profile`);
+  lines.push(`method_3=AltStore / Sideloadly inject`);
+  lines.push(`bundle_max=com.dts.freefiremax`);
+  lines.push(`bundle_th =com.dts.freefireth`);
+  lines.push(`wait_min  =10`);
+  lines.push(`requires_jailbreak=false`);
+  lines.push(`ios_min   =14`);
+  lines.push(`checksum  =${uid}`);
+
+  const result=lines.join('\n');
+  const out=document.getElementById('output');
+  document.getElementById('outputText').textContent=result;
+  out.style.display='block';
+  out.scrollIntoView({behavior:'smooth',block:'nearest'});
+  toast('✓ iOS FormData đã xuất!');
+}
+
+function copyOutput(){
+  navigator.clipboard.writeText(document.getElementById('outputText').textContent).catch(()=>{});
+  toast('✓ Copy FormData thành công!');
+}
+</script>
+</body>
+</html>
